@@ -1,13 +1,14 @@
 import _ from 'underscore';
-import CONST from '../CONST';
-import fontFamily from './fontFamily';
-import themeColors from './themes/default';
-import variables from './variables';
-import colors from './colors';
-import positioning from './utilities/positioning';
-import styles from './styles';
-import * as ReportUtils from '../libs/ReportUtils';
-import getSafeAreaPaddingTop from '../libs/getSafeAreaPaddingTop';
+import CONST from '../../CONST';
+import fontFamily from '../fontFamily';
+import themeColors from '../themes/default';
+import variables from '../variables';
+import colors from '../colors';
+import positioning from '../utilities/positioning';
+import styles from '../styles';
+import * as ReportUtils from '../../libs/ReportUtils';
+import getSafeAreaPaddingTop from '../../libs/getSafeAreaPaddingTop';
+import convertToLTR from './convertToLTR';
 
 const workspaceColorOptions = [
     {backgroundColor: colors.blue200, fill: colors.blue700},
@@ -747,16 +748,6 @@ function getPaddingLeft(paddingLeft) {
     return {
         paddingLeft,
     };
-}
-
-/**
- * Android only - convert RTL text to a LTR text using Unicode controls.
- * https://www.w3.org/International/questions/qa-bidi-unicode-controls
- * @param {String} text
- * @returns {String}
- */
-function convertToLTR(text) {
-    return `\u2066${text}`;
 }
 
 /**
