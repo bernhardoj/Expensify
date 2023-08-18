@@ -10,6 +10,7 @@ import sizing from './utilities/sizing';
 import flex from './utilities/flex';
 import display from './utilities/display';
 import overflow from './utilities/overflow';
+import overflowXHidden from './utilities/overflowXHidden';
 import whiteSpace from './utilities/whiteSpace';
 import wordBreak from './utilities/wordBreak';
 import positioning from './utilities/positioning';
@@ -20,7 +21,6 @@ import optionAlternateTextPlatformStyles from './optionAlternateTextPlatformStyl
 import pointerEventsNone from './pointerEventsNone';
 import pointerEventsAuto from './pointerEventsAuto';
 import getPopOverVerticalOffset from './getPopOverVerticalOffset';
-import overflowXHidden from './overflowXHidden';
 import CONST from '../CONST';
 import * as Browser from '../libs/Browser';
 import cursor from './utilities/cursor';
