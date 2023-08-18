@@ -1,4 +1,5 @@
 import overflowAuto from './overflowAuto';
+import overflowXHidden from './overflowXHidden';
 
 /**
  * Overflow utility styles with Bootstrap inspired naming.
@@ -9,6 +10,8 @@ export default {
     overflowHidden: {
         overflow: 'hidden',
     },
+
+    overflowXHidden,
 
     overflowVisible: {
         overflow: 'visible',
