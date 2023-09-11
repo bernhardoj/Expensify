@@ -125,6 +125,7 @@ function ComposerWithSuggestions({
 
     const textInputRef = useRef(null);
     const insertedEmojisRef = useRef([]);
+    const shouldIgnoreScrollCallback = useRef(false);
 
     /**
      * Update frequently used emojis list. We debounce this method in the constructor so that UpdateFrequentlyUsedEmojis
@@ -175,6 +176,7 @@ function ComposerWithSuggestions({
      */
     const updateComment = useCallback(
         (commentValue, shouldDebounceSaveComment) => {
+            shouldIgnoreScrollCallback.current = true;
             const {text: newComment, emojis} = EmojiUtils.replaceAndExtractEmojis(commentValue, preferredSkinTone, preferredLocale);
 
             if (!_.isEmpty(emojis)) {
@@ -314,12 +316,13 @@ function ComposerWithSuggestions({
         [suggestionsRef],
     );
 
-    const updateShouldShowSuggestionMenuToFalse = useCallback(() => {
-        if (!suggestionsRef.current) {
+    const updateShouldShowSuggestionMenuToFalse = useCallback(_.debounce(() => {
+        if (!suggestionsRef.current || shouldIgnoreScrollCallback.current) {
+            shouldIgnoreScrollCallback.current = false;
             return;
         }
         suggestionsRef.current.updateShouldShowSuggestionMenuToFalse(false);
-    }, [suggestionsRef]);
+    }, 200), [suggestionsRef]);
 
     const setShouldBlockSuggestionCalc = useCallback(() => {
         if (!suggestionsRef.current) {
