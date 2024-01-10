@@ -84,7 +84,6 @@ class BaseOptionsSelector extends Component {
 
         this.focusListener = null;
         this.blurListener = null;
-        this.isFocused = false;
 
         this.state = {
             sections: [],
@@ -99,28 +98,27 @@ class BaseOptionsSelector extends Component {
     }
 
     componentDidMount() {
-        this.focusListener = this.props.navigation.addListener('focus', () => {
+        const setUp = () => {
             // Screen coming back into focus, for example
             // when doing Cmd+Shift+K, then Cmd+K, then Cmd+Shift+K.
             // Only applies to platforms that support keyboard shortcuts
             if ([CONST.PLATFORM.DESKTOP, CONST.PLATFORM.WEB].includes(getPlatform())) {
                 this.subscribeToKeyboardShortcut();
             }
-
+    
             if (this.props.autoFocus && this.textInput) {
                 this.focusTimeout = setTimeout(() => {
                     this.textInput.focus();
                 }, CONST.ANIMATED_TRANSITION);
             }
-
-            this.isFocused = true;
-        });
+        }
+        setUp();
+        this.focusListener = this.props.navigation.addListener('focus', setUp);
 
         this.blurListener = this.props.navigation.addListener('blur', () => {
             if ([CONST.PLATFORM.DESKTOP, CONST.PLATFORM.WEB].includes(getPlatform())) {
                 this.unSubscribeFromKeyboardShortcut();
             }
-            this.isFocused = false;
         });
         this.scrollToIndex(this.props.selectedOptions.length ? 0 : this.state.focusedIndex, false);
 
@@ -336,7 +334,7 @@ class BaseOptionsSelector extends Component {
         const focusedItemKey = lodashGet(e, ['target', 'attributes', 'id', 'value']);
         const focusedOption = focusedItemKey ? _.find(this.state.allOptions, (option) => option.keyForList === focusedItemKey) : this.state.allOptions[this.state.focusedIndex];
 
-        if (!focusedOption || !this.isFocused) {
+        if (!focusedOption) {
             return;
         }
 
