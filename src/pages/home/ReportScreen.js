@@ -15,7 +15,6 @@ import ReportActionsSkeletonView from '@components/ReportActionsSkeletonView';
 import ScreenWrapper from '@components/ScreenWrapper';
 import TaskHeaderActionButton from '@components/TaskHeaderActionButton';
 import withCurrentReportID, {withCurrentReportIDDefaultProps, withCurrentReportIDPropTypes} from '@components/withCurrentReportID';
-import withViewportOffsetTop from '@components/withViewportOffsetTop';
 import useAppFocusEvent from '@hooks/useAppFocusEvent';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
@@ -97,7 +96,6 @@ const propTypes = {
     /** Whether user is leaving the current report */
     userLeavingStatus: PropTypes.bool,
 
-    viewportOffsetTop: PropTypes.number.isRequired,
     ...withCurrentReportIDPropTypes,
 };
 
@@ -148,7 +146,6 @@ function ReportScreen({
     markReadyForHydration,
     policies,
     isSidebarLoaded,
-    viewportOffsetTop,
     isComposerFullSize,
     errors,
     userLeavingStatus,
@@ -261,7 +258,7 @@ function ReportScreen({
 
     const reportID = getReportID(route);
     const {reportPendingAction, reportErrors} = ReportUtils.getReportOfflinePendingActionAndErrors(report);
-    const screenWrapperStyle = [styles.appContent, styles.flex1, {marginTop: viewportOffsetTop}];
+    const screenWrapperStyle = [styles.appContent, styles.flex1];
     const isEmptyChat = useMemo(() => _.isEmpty(reportActions), [reportActions]);
     // There are no reportActions at all to display and we are still in the process of loading the next set of actions.
     const isLoadingInitialReportActions = _.isEmpty(reportActions) && reportMetadata.isLoadingInitialReportActions;
@@ -514,6 +511,7 @@ function ReportScreen({
                 <ScreenWrapper
                     navigation={navigation}
                     style={screenWrapperStyle}
+                    shouldEnableMaxHeight={isTopMostReportId}
                     shouldEnableKeyboardAvoidingView={isTopMostReportId}
                     testID={ReportScreen.displayName}
                 >
@@ -601,7 +599,6 @@ ReportScreen.defaultProps = defaultProps;
 ReportScreen.displayName = 'ReportScreen';
 
 export default compose(
-    withViewportOffsetTop,
     withCurrentReportID,
     withOnyx(
         {
@@ -672,7 +669,6 @@ export default compose(
             prevProps.accountManagerReportID === nextProps.accountManagerReportID &&
             prevProps.userLeavingStatus === nextProps.userLeavingStatus &&
             prevProps.currentReportID === nextProps.currentReportID &&
-            prevProps.viewportOffsetTop === nextProps.viewportOffsetTop &&
             _.isEqual(prevProps.parentReportAction, nextProps.parentReportAction) &&
             _.isEqual(prevProps.report, nextProps.report),
     ),
