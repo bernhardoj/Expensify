@@ -270,13 +270,14 @@ function ReimbursementAccountPage({reimbursementAccount, route, onfidoToken, pol
         // We can specify a step to navigate to by using route params when the component mounts.
         // We want to use the same stepToOpen variable when the network state changes because we can be redirected to a different step when the account refreshes.
         const stepToOpen = getStepToOpenFromRouteParams(route);
-        const subStep = achData.subStep || '';
         const localCurrentStep = achData.currentStep || '';
-        BankAccounts.openReimbursementAccountPage(stepToOpen, subStep, ignoreLocalCurrentStep ? '' : localCurrentStep, policyID);
+        BankAccounts.openReimbursementAccountPage(stepToOpen, '', ignoreLocalCurrentStep ? '' : localCurrentStep, policyID);
     }
 
     useEffect(
         () => {
+            BankAccounts.setBankAccountSubStep(null);
+            BankAccounts.setPlaidEvent(null);
             fetchData();
             return () => {
                 BankAccounts.clearReimbursementAccount();
