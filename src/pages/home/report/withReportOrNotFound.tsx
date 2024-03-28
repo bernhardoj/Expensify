@@ -108,6 +108,7 @@ export default function (
             },
             isLoadingReportData: {
                 key: ONYXKEYS.IS_LOADING_REPORT_DATA,
+                initialValue: true,
             },
             betas: {
                 key: ONYXKEYS.BETAS,

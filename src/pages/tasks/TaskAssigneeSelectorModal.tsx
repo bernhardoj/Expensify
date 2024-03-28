@@ -244,6 +244,7 @@ const TaskAssigneeSelectorModalWithOnyx = withOnyx<TaskAssigneeSelectorModalProp
     },
     task: {
         key: ONYXKEYS.TASK,
+        initialValue: {},
     },
 })(TaskAssigneeSelectorModal);
 

@@ -58,6 +58,7 @@ export default function withPolicyAndFullscreenLoading<TProps extends WithPolicy
         withOnyx<TProps & RefAttributes<TRef>, WithPolicyAndFullscreenLoadingOnyxProps>({
             isLoadingReportData: {
                 key: ONYXKEYS.IS_LOADING_REPORT_DATA,
+                initialValue: true,
             },
         }),
         withPolicy,

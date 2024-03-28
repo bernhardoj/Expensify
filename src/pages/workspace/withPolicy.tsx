@@ -141,9 +141,11 @@ export default function <TProps extends WithPolicyProps, TRef>(WrappedComponent:
         },
         policyDraft: {
             key: (props) => `${ONYXKEYS.COLLECTION.POLICY_DRAFTS}${getPolicyIDFromRoute(props.route)}`,
+            initialValue: {} as OnyxTypes.Policy,
         },
         policyMembersDraft: {
             key: (props) => `${ONYXKEYS.COLLECTION.POLICY_MEMBERS_DRAFTS}${getPolicyIDFromRoute(props.route)}`,
+            initialValue: {},
         },
     })(forwardRef(WithPolicy));
 }

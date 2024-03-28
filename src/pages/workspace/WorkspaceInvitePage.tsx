@@ -352,6 +352,7 @@ export default withPolicyAndFullscreenLoading(
         },
         invitedEmailsToAccountIDsDraft: {
             key: ({route}) => `${ONYXKEYS.COLLECTION.WORKSPACE_INVITE_MEMBERS_DRAFT}${route.params.policyID.toString()}`,
+            initialValue: {},
         },
     })(WorkspaceInvitePage),
 );
