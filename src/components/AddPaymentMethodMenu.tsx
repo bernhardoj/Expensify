@@ -1,5 +1,5 @@
 import type {RefObject} from 'react';
-import React from 'react';
+import React, {useState} from 'react';
 import type {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
@@ -13,6 +13,7 @@ import type {Report, Session} from '@src/types/onyx';
 import type AnchorAlignment from '@src/types/utils/AnchorAlignment';
 import * as Expensicons from './Icon/Expensicons';
 import type {PaymentMethod} from './KYCWall/types';
+import type BaseModalProps from './Modal/types';
 import PopoverMenu from './PopoverMenu';
 
 type AddPaymentMethodMenuOnyxProps = {
@@ -62,6 +63,8 @@ function AddPaymentMethodMenu({
 }: AddPaymentMethodMenuProps) {
     const {translate} = useLocalize();
 
+    const [restoreFocusType, setRestoreFocusType] = useState<BaseModalProps['restoreFocusType']>(undefined);
+
     // Users can choose to pay with business bank account in case of Expense reports or in case of P2P IOU report
     // which then starts a bottom up flow and creates a Collect workspace where the payer is an admin and payee is an employee.
     const isIOUReport = ReportUtils.isIOUReport(iouReport);
@@ -73,11 +76,19 @@ function AddPaymentMethodMenu({
     return (
         <PopoverMenu
             isVisible={isVisible}
-            onClose={onClose}
+            shouldEnableNewFocusManagement
+            restoreFocusType={restoreFocusType}
+            onClose={() => {
+                setRestoreFocusType(undefined);
+                onClose();
+            }}
             anchorPosition={anchorPosition}
             anchorAlignment={anchorAlignment}
             anchorRef={anchorRef}
-            onItemSelected={onClose}
+            onItemSelected={() => {
+                setRestoreFocusType(CONST.MODAL.RESTORE_FOCUS_TYPE.PRESERVE);
+                onClose();
+            }}
             menuItems={[
                 ...(canUsePersonalBankAccount
                     ? [

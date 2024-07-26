@@ -3,6 +3,7 @@ import type {RefObject} from 'react';
 import React, {useEffect, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {ModalProps} from 'react-native-modal';
+import type {ValueOf} from 'type-fest';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -80,6 +81,9 @@ type PopoverMenuProps = Partial<PopoverModalProps> & {
      * We are attempting to migrate to a new refocus manager, adding this property for gradual migration.
      * */
     shouldEnableNewFocusManagement?: boolean;
+
+    /** How to re-focus after the modal is dismissed */
+    restoreFocusType?: ValueOf<typeof CONST.MODAL.RESTORE_FOCUS_TYPE>;
 };
 
 function PopoverMenu({
@@ -102,6 +106,7 @@ function PopoverMenu({
     withoutOverlay = false,
     shouldSetModalVisibility = true,
     shouldEnableNewFocusManagement,
+    restoreFocusType,
 }: PopoverMenuProps) {
     const styles = useThemeStyles();
     const theme = useTheme();
@@ -219,6 +224,7 @@ function PopoverMenu({
             withoutOverlay={withoutOverlay}
             shouldSetModalVisibility={shouldSetModalVisibility}
             shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}
+            restoreFocusType={restoreFocusType}
         >
             <FocusTrapForModal active={isVisible}>
                 <View style={isSmallScreenWidth ? {} : styles.createMenuContainer}>
