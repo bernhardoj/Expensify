@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {ForwardedRef, forwardRef} from 'react';
 import TestDrive from '@assets/images/test-drive.svg';
-import type {FeatureTrainingModalProps} from '@components/FeatureTrainingModal';
+import type {FeatureTrainingModalHandle, FeatureTrainingModalProps} from '@components/FeatureTrainingModal';
 import FeatureTrainingModal from '@components/FeatureTrainingModal';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -9,26 +9,40 @@ import CONST from '@src/CONST';
 
 type BaseTestDriveModalProps = Pick<
     FeatureTrainingModalProps,
-    'children' | 'description' | 'onConfirm' | 'shouldCloseOnConfirm' | 'shouldRenderHTMLDescription' | 'avoidKeyboard' | 'shouldShowConfirmationLoader' | 'canConfirmWhileOffline' | 'onHelp'
+    | 'children'
+    | 'description'
+    | 'onConfirm'
+    | 'onModalHide'
+    | 'shouldCloseOnConfirm'
+    | 'shouldRenderHTMLDescription'
+    | 'avoidKeyboard'
+    | 'shouldShowConfirmationLoader'
+    | 'canConfirmWhileOffline'
+    | 'onHelp'
 >;
 
-function BaseTestDriveModal({
-    description,
-    onConfirm,
-    onHelp,
-    children,
-    shouldCloseOnConfirm,
-    shouldRenderHTMLDescription,
-    avoidKeyboard,
-    shouldShowConfirmationLoader,
-    canConfirmWhileOffline,
-}: BaseTestDriveModalProps) {
+function BaseTestDriveModal(
+    {
+        description,
+        onConfirm,
+        onHelp,
+        onModalHide,
+        children,
+        shouldCloseOnConfirm,
+        shouldRenderHTMLDescription,
+        avoidKeyboard,
+        shouldShowConfirmationLoader,
+        canConfirmWhileOffline,
+    }: BaseTestDriveModalProps,
+    ref: ForwardedRef<FeatureTrainingModalHandle>,
+) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     return (
         <FeatureTrainingModal
+            ref={ref}
             image={TestDrive}
             illustrationOuterContainerStyle={styles.p0}
             illustrationAspectRatio={CONST.FEATURE_TRAINING.TEST_DRIVE_COVER_ASPECT_RATIO}
@@ -38,6 +52,7 @@ function BaseTestDriveModal({
             confirmText={translate('testDrive.modal.confirmText')}
             onHelp={onHelp}
             onConfirm={onConfirm}
+            onModalHide={onModalHide}
             modalInnerContainerStyle={styles.testDriveModalContainer(shouldUseNarrowLayout)}
             contentInnerContainerStyles={styles.gap2}
             shouldCloseOnConfirm={shouldCloseOnConfirm}
@@ -54,4 +69,4 @@ function BaseTestDriveModal({
 
 BaseTestDriveModal.displayName = 'BaseTestDriveModal';
 
-export default BaseTestDriveModal;
+export default forwardRef(BaseTestDriveModal);

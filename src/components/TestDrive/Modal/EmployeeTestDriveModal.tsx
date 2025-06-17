@@ -1,9 +1,9 @@
 import {useRoute} from '@react-navigation/native';
 import {format} from 'date-fns';
 import {Str} from 'expensify-common';
-import React, {useCallback, useState} from 'react';
-import {InteractionManager} from 'react-native';
+import React, {useCallback, useRef, useState} from 'react';
 import TestReceipt from '@assets/images/fake-test-drive-employee-receipt.jpg';
+import {FeatureTrainingModalHandle} from '@components/FeatureTrainingModal';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import {
@@ -33,6 +33,8 @@ function EmployeeTestDriveModal() {
     const [bossEmail, setBossEmail] = useState(route.params?.bossEmail ?? '');
     const [formError, setFormError] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(false);
+    const modalRef = useRef<FeatureTrainingModalHandle>(null);
+    const testDriveDataRef = useRef<{transactionID: string; reportID: string} | null>(null);
 
     const onBossEmailChange = useCallback((value: string) => {
         setBossEmail(value);
@@ -78,10 +80,8 @@ function EmployeeTestDriveModal() {
                         setMoneyRequestMerchant(transactionID, CONST.TEST_DRIVE.EMPLOYEE_FAKE_RECEIPT.MERCHANT, true);
                         setMoneyRequestCreated(transactionID, format(new Date(), CONST.DATE.FNS_FORMAT_STRING), true);
 
-                        InteractionManager.runAfterInteractions(() => {
-                            Navigation.goBack();
-                            Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
-                        });
+                        modalRef.current?.closeModal();
+                        testDriveDataRef.current = {transactionID, reportID};
                     },
                     () => {
                         setIsLoading(false);
@@ -96,14 +96,23 @@ function EmployeeTestDriveModal() {
     };
 
     const skipTestDrive = () => {
-        Navigation.dismissModal();
+        modalRef.current?.closeModal();
     };
 
     return (
         <BaseTestDriveModal
+            ref={modalRef}
             description={translate('testDrive.modal.employee.description')}
             onConfirm={navigate}
             onHelp={skipTestDrive}
+            onModalHide={() => {
+                if (!testDriveDataRef.current) {
+                    return;
+                }
+                const {transactionID, reportID} = testDriveDataRef.current;
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
+                testDriveDataRef.current = null;
+            }}
             shouldCloseOnConfirm={false}
             shouldRenderHTMLDescription
             avoidKeyboard

@@ -1,6 +1,6 @@
 import type {VideoReadyForDisplayEvent} from 'expo-av';
 import type {ImageContentFit} from 'expo-image';
-import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import React, {ForwardedRef, forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useState} from 'react';
 import {Image, InteractionManager, View} from 'react-native';
 import type {ImageResizeMode, ImageSourcePropType, StyleProp, TextStyle, ViewStyle} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -80,6 +80,8 @@ type BaseFeatureTrainingModalProps = {
     /** A callback to call when modal closes */
     onClose?: () => void;
 
+    onModalHide?: () => void;
+
     /** Text to show on secondary button */
     helpText?: string;
 
@@ -157,42 +159,50 @@ type FeatureTrainingModalSVGProps = {
 // This page requires either an icon or a video/animation, but not both
 type FeatureTrainingModalProps = BaseFeatureTrainingModalProps & MergeExclusive<FeatureTrainingModalVideoProps, FeatureTrainingModalSVGProps>;
 
-function FeatureTrainingModal({
-    animation,
-    animationStyle,
-    illustrationInnerContainerStyle,
-    illustrationOuterContainerStyle,
-    videoURL,
-    illustrationAspectRatio: illustrationAspectRatioProp,
-    image,
-    contentFitImage,
-    width = variables.featureTrainingModalWidth,
-    title = '',
-    description = '',
-    secondaryDescription = '',
-    titleStyles,
-    shouldShowDismissModalOption = false,
-    confirmText = '',
-    onConfirm = () => {},
-    onClose = () => {},
-    helpText = '',
-    onHelp = () => {},
-    children,
-    contentInnerContainerStyles,
-    contentOuterContainerStyles,
-    modalInnerContainerStyle,
-    imageWidth,
-    imageHeight,
-    isModalDisabled = true,
-    shouldRenderSVG = true,
-    shouldRenderHTMLDescription = false,
-    shouldCloseOnConfirm = true,
-    avoidKeyboard = false,
-    shouldUseScrollView = false,
-    shouldShowConfirmationLoader = false,
-    canConfirmWhileOffline = true,
-    shouldGoBack = true,
-}: FeatureTrainingModalProps) {
+type FeatureTrainingModalHandle = {
+    closeModal: () => void;
+};
+
+function FeatureTrainingModal(
+    {
+        animation,
+        animationStyle,
+        illustrationInnerContainerStyle,
+        illustrationOuterContainerStyle,
+        videoURL,
+        illustrationAspectRatio: illustrationAspectRatioProp,
+        image,
+        contentFitImage,
+        width = variables.featureTrainingModalWidth,
+        title = '',
+        description = '',
+        secondaryDescription = '',
+        titleStyles,
+        shouldShowDismissModalOption = false,
+        confirmText = '',
+        onConfirm = () => {},
+        onClose = () => {},
+        onModalHide,
+        helpText = '',
+        onHelp = () => {},
+        children,
+        contentInnerContainerStyles,
+        contentOuterContainerStyles,
+        modalInnerContainerStyle,
+        imageWidth,
+        imageHeight,
+        isModalDisabled = true,
+        shouldRenderSVG = true,
+        shouldRenderHTMLDescription = false,
+        shouldCloseOnConfirm = true,
+        avoidKeyboard = false,
+        shouldUseScrollView = false,
+        shouldShowConfirmationLoader = false,
+        canConfirmWhileOffline = true,
+        shouldGoBack = true,
+    }: FeatureTrainingModalProps,
+    ref: ForwardedRef<FeatureTrainingModalHandle>,
+) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
@@ -328,9 +338,6 @@ function FeatureTrainingModal({
         }
         setIsModalVisible(false);
         InteractionManager.runAfterInteractions(() => {
-            if (shouldGoBack) {
-                Navigation.goBack();
-            }
             onClose?.();
         });
     }, [onClose, shouldGoBack, willShowAgain]);
@@ -350,6 +357,8 @@ function FeatureTrainingModal({
      */
     useLayoutEffect(parseFSAttributes, []);
 
+    useImperativeHandle(ref, () => ({closeModal}));
+
     const Wrapper = shouldUseScrollView ? ScrollView : View;
 
     return (
@@ -358,6 +367,12 @@ function FeatureTrainingModal({
             isVisible={isModalVisible}
             type={onboardingIsMediumOrLargerScreenWidth ? CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE : CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
             onClose={closeModal}
+            onModalHide={() => {
+                if (shouldGoBack) {
+                    Navigation.goBack();
+                }
+                onModalHide?.();
+            }}
             innerContainerStyle={{
                 boxShadow: 'none',
                 ...(shouldUseScrollView ? styles.pb0 : styles.pb5),
@@ -422,6 +437,6 @@ function FeatureTrainingModal({
     );
 }
 
-export default FeatureTrainingModal;
+export default forwardRef(FeatureTrainingModal);
 
-export type {FeatureTrainingModalProps};
+export type {FeatureTrainingModalProps, FeatureTrainingModalHandle};

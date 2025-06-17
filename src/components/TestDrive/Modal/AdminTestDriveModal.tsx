@@ -1,6 +1,6 @@
-import React from 'react';
-import {InteractionManager} from 'react-native';
+import React, {useRef} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import {FeatureTrainingModalHandle} from '@components/FeatureTrainingModal';
 import useLocalize from '@hooks/useLocalize';
 import Navigation from '@libs/Navigation/Navigation';
 import {isAdminRoom} from '@libs/ReportUtils';
@@ -12,29 +12,36 @@ function AdminTestDriveModal() {
     const {translate} = useLocalize();
     const [onboarding] = useOnyx(ONYXKEYS.NVP_ONBOARDING, {canBeMissing: false});
     const [onboardingReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${onboarding?.chatReportID}`, {canBeMissing: true});
+    const modalRef = useRef<FeatureTrainingModalHandle>(null);
+    const actionToPerformRef = useRef<'skip' | 'navigate'>();
 
     const navigate = () => {
-        InteractionManager.runAfterInteractions(() => {
-            Navigation.navigate(ROUTES.TEST_DRIVE_DEMO_ROOT);
-        });
+        actionToPerformRef.current = 'navigate';
     };
 
     const skipTestDrive = () => {
-        Navigation.dismissModal();
-        InteractionManager.runAfterInteractions(() => {
-            if (!isAdminRoom(onboardingReport)) {
-                return;
-            }
-
-            Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(onboardingReport?.reportID));
-        });
+        actionToPerformRef.current = 'skip';
+        modalRef.current?.closeModal();
     };
 
     return (
         <BaseTestDriveModal
+            ref={modalRef}
             description={translate('testDrive.modal.description')}
             onConfirm={navigate}
             onHelp={skipTestDrive}
+            onModalHide={() => {
+                switch (actionToPerformRef.current) {
+                    case 'skip': {
+                        if (!isAdminRoom(onboardingReport)) {
+                            return;
+                        }
+
+                        Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(onboardingReport?.reportID));
+                    }
+                    case 'navigate': Navigation.navigate(ROUTES.TEST_DRIVE_DEMO_ROOT);
+                }
+            }}
         />
     );
 }
