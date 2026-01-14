@@ -118,6 +118,7 @@ import {
     canFlagReportAction,
     canHoldUnholdReportAction,
     changeMoneyRequestHoldStatus,
+    findSelfDMReportID,
     getChildReportNotificationPreference as getChildReportNotificationPreferenceReportUtils,
     getDeletedTransactionMessage,
     getDowngradeWorkspaceMessage,
@@ -1081,8 +1082,17 @@ const ContextMenuActions: ContextMenuAction[] = [
             );
         },
         onPress: (closePopover, {reportID: reportIDParam, reportAction, moneyRequestAction}) => {
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-            const reportID = isMoneyRequestAction(moneyRequestAction) ? getOriginalMessage(moneyRequestAction)?.IOUReportID || reportIDParam : reportIDParam;
+            let reportID = reportIDParam;
+
+            if (isMoneyRequestAction(moneyRequestAction)) {
+                reportID = String(getOriginalMessage(moneyRequestAction)?.IOUReportID);
+                if (reportID === CONST.REPORT.UNREPORTED_REPORT_ID) {
+                    reportID = findSelfDMReportID();
+                }
+                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+                reportID = reportID || reportIDParam;
+            }
+
             if (closePopover) {
                 // Hide popover, then call showDeleteConfirmModal
                 hideContextMenu(false, () => showDeleteModal(reportID, moneyRequestAction ?? reportAction));
