@@ -192,7 +192,17 @@ function mapTransactionItemToSelectedEntry({
 }: MapTransactionItemToSelectedEntryParams): [string, SelectedTransactionInfo] {
     // TODO: Pass reportOwnerLogin in Part 8. This runs once per search result, so it needs a precomputed map of accountID to login rather than a hook.
     // canModifyHoldStatus falls back to the personal details store until then. See https://github.com/Expensify/App/issues/66413.
-    const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(item.report, item.reportAction, item.holdReportAction, item, item.policy, currentUserAccountID, rules, undefined);
+    const {canHoldRequest, canUnholdRequest} = canHoldUnholdReportAction(
+        item.report,
+        item.reportAction,
+        item.holdReportAction,
+        item,
+        item.policy,
+        currentUserAccountID,
+        rules,
+        undefined,
+        item.reportManagerLogin,
+    );
     const canRejectRequest = item.report ? canRejectReportAction(item.report, currentUserAccountID, item.policy) : false;
     const amount = hasValidModifiedAmount(item) ? Number(item.modifiedAmount) : item.amount;
     const isUnreported = isExpenseUnreported(item);

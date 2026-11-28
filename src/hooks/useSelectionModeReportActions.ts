@@ -75,6 +75,7 @@ function useSelectionModeReportActions({
         selector: createMoveExpenseReportNVPSelector(outstandingReportsByPolicyID, report?.reportID),
     });
     const [submitterLogin] = usePersonalDetail(report?.ownerAccountID, loginSelector);
+    const [managerLogin] = usePersonalDetail(report?.managerID, loginSelector);
     const [invoiceReceiverPolicy] = useOnyx(
         `${ONYXKEYS.COLLECTION.POLICY}${chatReport?.invoiceReceiver && 'policyID' in chatReport.invoiceReceiver ? chatReport.invoiceReceiver.policyID : undefined}`,
     );
@@ -189,6 +190,7 @@ function useSelectionModeReportActions({
             currentUserLogin: currentUserEmail,
             currentUserAccountID,
             submitterLogin,
+            managerLogin,
             report,
             chatReport,
             reportTransactions: transactions,

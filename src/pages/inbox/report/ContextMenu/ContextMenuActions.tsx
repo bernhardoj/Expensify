@@ -340,11 +340,13 @@ type ShouldShow = (args: {
     transactions?: OnyxCollection<Transaction>;
     moneyRequestReport?: OnyxEntry<ReportType>;
     moneyRequestPolicy?: OnyxEntry<Policy>;
-    moneyRequestReportOwnerLogin: string | undefined;
     isHarvestReport?: boolean;
     currentUserAccountID: number;
     rules: OnyxCollection<Rule>;
-    /** The full list is needed because canDeleteReportAction resolves the report owner from the reportID it is given. */
+    /**
+     * The full list is needed because canDeleteReportAction resolves the report owner from the reportID it is given.
+     * Hold and unhold also read the money request report's owner and manager logins from it.
+     */
     personalDetails: OnyxEntry<PersonalDetailsList>;
     cardList: OnyxEntry<CardList>;
 }) => boolean;
@@ -764,7 +766,7 @@ const ContextMenuActions: ContextMenuAction[] = [
             holdReportAction,
             currentUserAccountID,
             rules,
-            moneyRequestReportOwnerLogin,
+            personalDetails,
         }) => {
             if (type !== CONST.CONTEXT_MENU_TYPES.REPORT_ACTION || !areHoldRequirementsMet) {
                 return false;
@@ -777,7 +779,9 @@ const ContextMenuActions: ContextMenuAction[] = [
                 moneyRequestPolicy,
                 currentUserAccountID,
                 rules,
-                moneyRequestReportOwnerLogin,
+                getLoginByAccountID(moneyRequestReport?.ownerAccountID, personalDetails),
+                // Only canUnholdRequest is read here, and whether an expense can be unheld never depends on the report manager's login, so none is passed.
+                undefined,
             ).canUnholdRequest;
         },
         onPress: (
@@ -856,7 +860,7 @@ const ContextMenuActions: ContextMenuAction[] = [
             holdReportAction,
             currentUserAccountID,
             rules,
-            moneyRequestReportOwnerLogin,
+            personalDetails,
         }) => {
             if (type !== CONST.CONTEXT_MENU_TYPES.REPORT_ACTION || !areHoldRequirementsMet) {
                 return false;
@@ -869,7 +873,8 @@ const ContextMenuActions: ContextMenuAction[] = [
                 moneyRequestPolicy,
                 currentUserAccountID,
                 rules,
-                moneyRequestReportOwnerLogin,
+                getLoginByAccountID(moneyRequestReport?.ownerAccountID, personalDetails),
+                getLoginByAccountID(moneyRequestReport?.managerID, personalDetails),
             ).canHoldRequest;
         },
         onPress: (

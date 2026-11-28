@@ -1,7 +1,15 @@
 import type {TransactionGroupListItemType, TransactionReportGroupListItemType} from '@components/Search/SearchList/ListItem/types';
-import {mapEmptyReportToSelectedEntry, mergeRowsIntoPartlyLoadedGroups, resolveGroupCount, stampGroupCoverageFlags} from '@components/Search/selectionBuilders';
+import {
+    mapEmptyReportToSelectedEntry,
+    mapTransactionItemToSelectedEntry,
+    mergeRowsIntoPartlyLoadedGroups,
+    resolveGroupCount,
+    stampGroupCoverageFlags,
+} from '@components/Search/selectionBuilders';
 import type {SelectedTransactions} from '@components/Search/types';
 
+// eslint-disable-next-line no-restricted-imports -- Namespace import is required to spy on ReportUtils without replacing the production module.
+import * as ReportUtils from '@libs/ReportUtils';
 import type {SearchGroupKey} from '@libs/SearchUIUtils';
 
 import CONST from '@src/CONST';
@@ -58,6 +66,34 @@ describe('selectionBuilders', () => {
             const [, entry] = mapEmptyReportToSelectedEntry(item);
 
             expect(entry.displayAmount).toBe(-4000);
+        });
+    });
+
+    describe('mapTransactionItemToSelectedEntry', () => {
+        it('passes the manager login stored on the row to the hold check', () => {
+            // Given a row whose report manager login was looked up from the personal details the search returned
+            const managerLogin = 'manager@test.com';
+            const item = buildTransactionRow(1, 'row1', {reportManagerLogin: managerLogin});
+            const canHoldUnholdReportActionSpy = jest.spyOn(ReportUtils, 'canHoldUnholdReportAction');
+
+            // When the row is turned into a selection entry
+            mapTransactionItemToSelectedEntry({
+                item,
+                itemTransaction: item,
+                originalItemTransaction: undefined,
+                currentUserLogin: 'user@test.com',
+                currentUserAccountID: 1,
+                reportNameValuePairs: undefined,
+                outstandingReportsByPolicyID: undefined,
+                selfDMReport: undefined,
+                allowNegativeAmount: false,
+                parentReport: undefined,
+                rules: undefined,
+            });
+
+            // Then the hold check receives that login, so it doesn't need the manager in the local personal details store
+            expect(canHoldUnholdReportActionSpy.mock.calls.at(0)?.[8]).toBe(managerLogin);
+            canHoldUnholdReportActionSpy.mockRestore();
         });
     });
 

@@ -114,6 +114,11 @@ type TransactionListItemType = ListItem &
         /** The personal details of the user paying the request */
         to: PersonalDetails;
 
+        /**
+         * Login of the report's manager, looked up once when the row is built from the personal details the search returned.
+         */
+        reportManagerLogin: string | undefined;
+
         /** final and formatted "from" value used for displaying and sorting */
         formattedFrom: string;
 

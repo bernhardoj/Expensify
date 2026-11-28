@@ -354,6 +354,7 @@ function useSelectedTransactionsActions({
                 currentUserAccountID,
                 rules,
                 getLoginByAccountID(report?.ownerAccountID, personalDetails),
+                getLoginByAccountID(report?.managerID, personalDetails),
             );
 
             canHoldTransactions = canHoldTransactions && canHoldRequest;
@@ -659,6 +660,7 @@ function useSelectedTransactionsActions({
                         session.accountID,
                         rules,
                         getLoginByAccountID(report?.ownerAccountID, personalDetails),
+                        getLoginByAccountID(report?.managerID, personalDetails),
                         policy,
                         cardList,
                     )

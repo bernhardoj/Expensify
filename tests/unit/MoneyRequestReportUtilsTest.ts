@@ -121,6 +121,7 @@ const transactionItemBaseMock: TransactionListItemType = {
         displayName: undefined,
         login: undefined,
     },
+    reportManagerLogin: undefined,
     transactionID: '1',
     receipt: undefined,
     taxAmount: undefined,

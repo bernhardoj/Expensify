@@ -231,6 +231,7 @@ const mockTransaction: TransactionListItemType = {
         avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/default-avatar_15.png',
         displayName: 'Main Applause QA',
     },
+    reportManagerLogin: undefined,
 };
 
 const mockNonEmptyReport: TransactionReportGroupListItemType = {

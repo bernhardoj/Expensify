@@ -19,6 +19,7 @@ function buildTransactionRow(index: number, key: string, overrides: Partial<Tran
         holdReportAction: undefined,
         from: {accountID: index},
         to: {accountID: index},
+        reportManagerLogin: undefined,
         formattedFrom: '',
         formattedTo: '',
         formattedTotal: 0,

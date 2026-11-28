@@ -970,6 +970,7 @@ const transactionsListItems = createMock<TransactionListItemType[]>([
         isAmountColumnWide: false,
         isTaxAmountColumnWide: false,
         tag: '',
+        reportManagerLogin: adminEmail,
         to: emptyPersonalDetails,
         transactionID: '1',
         receipt: undefined,
@@ -1036,6 +1037,7 @@ const transactionsListItems = createMock<TransactionListItemType[]>([
         isAmountColumnWide: false,
         isTaxAmountColumnWide: false,
         tag: '',
+        reportManagerLogin: adminEmail,
         to: {
             accountID: 18439984,
             avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -1099,6 +1101,7 @@ const transactionsListItems = createMock<TransactionListItemType[]>([
             displayName: 'Admin',
             login: 'admin@policy.com',
         },
+        reportManagerLogin: approverEmail,
         to: {
             accountID: 1111111,
             avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -1171,6 +1174,7 @@ const transactionsListItems = createMock<TransactionListItemType[]>([
             displayName: 'Admin',
             login: 'admin@policy.com',
         },
+        reportManagerLogin: approverEmail,
         to: {
             accountID: 1111111,
             avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -1334,6 +1338,7 @@ const transactionReportGroupListItems = createMock<Array<TransactionReportGroupL
                 isAmountColumnWide: false,
                 isTaxAmountColumnWide: false,
                 tag: '',
+                reportManagerLogin: adminEmail,
                 to: emptyPersonalDetails,
                 transactionID: '1',
                 receipt: undefined,
@@ -1480,6 +1485,7 @@ const transactionReportGroupListItems = createMock<Array<TransactionReportGroupL
                 isAmountColumnWide: false,
                 isTaxAmountColumnWide: false,
                 tag: '',
+                reportManagerLogin: adminEmail,
                 to: {
                     accountID: 18439984,
                     avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -1617,6 +1623,7 @@ const transactionReportGroupListItems = createMock<Array<TransactionReportGroupL
                     displayName: 'Admin',
                     login: 'admin@policy.com',
                 },
+                reportManagerLogin: approverEmail,
                 to: {
                     accountID: 1111111,
                     avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -1688,6 +1695,7 @@ const transactionReportGroupListItems = createMock<Array<TransactionReportGroupL
                     displayName: 'Admin',
                     login: 'admin@policy.com',
                 },
+                reportManagerLogin: approverEmail,
                 to: {
                     accountID: 1111111,
                     avatar: 'https://d2k5nsl2zxldvw.cloudfront.net/images/avatars/avatar_3.png',
@@ -3277,7 +3285,7 @@ describe('SearchUIUtils', () => {
             expect(distanceTransaction).toBeDefined();
             expect(distanceTransaction?.iouRequestType).toBe(CONST.IOU.REQUEST_TYPE.DISTANCE);
 
-            const expectedPropertyCount = 61;
+            const expectedPropertyCount = 62;
             expect(Object.keys(distanceTransaction ?? {}).length).toBe(expectedPropertyCount);
         });
 
@@ -3320,7 +3328,7 @@ describe('SearchUIUtils', () => {
             expect(distanceTransaction).toBeDefined();
             expect(distanceTransaction?.iouRequestType).toBe(CONST.IOU.REQUEST_TYPE.DISTANCE);
 
-            const expectedPropertyCount = 60;
+            const expectedPropertyCount = 61;
             expect(Object.keys(distanceTransaction ?? {}).length).toBe(expectedPropertyCount);
         });
 

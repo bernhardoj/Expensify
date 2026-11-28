@@ -153,6 +153,7 @@ function MoneyRequestHeaderSecondaryActions({reportID, onBackButtonPress}: Money
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportID}`);
     const [parentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${report?.parentReportID}`);
     const [parentOwnerLogin] = usePersonalDetail(parentReport?.ownerAccountID, loginSelector);
+    const [parentManagerLogin] = usePersonalDetail(parentReport?.managerID, loginSelector);
     const [grandParentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${parentReport?.parentReportID}`);
     const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${report?.policyID}`);
     const [parentReportActions] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report?.parentReportID}`);
@@ -392,6 +393,7 @@ function MoneyRequestHeaderSecondaryActions({reportID, onBackButtonPress}: Money
             currentUserAccountID: accountID,
             parentReport,
             parentReportOwnerLogin: parentOwnerLogin,
+            parentReportManagerLogin: parentManagerLogin,
             parentReportActions,
             reportTransaction: transaction,
             reportAction: parentReportAction,

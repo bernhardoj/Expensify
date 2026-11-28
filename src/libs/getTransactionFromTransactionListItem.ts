@@ -50,6 +50,7 @@ const SEARCH_TRANSACTION_ROW_ONLY_FIELDS: Record<Exclude<keyof TransactionListIt
     holdReportAction: true,
     from: true,
     to: true,
+    reportManagerLogin: true,
     formattedFrom: true,
     formattedTo: true,
     formattedTotal: true,

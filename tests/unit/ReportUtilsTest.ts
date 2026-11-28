@@ -7051,7 +7051,7 @@ describe('ReportUtils', () => {
                 },
             ]);
 
-            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, undefined)).toEqual({
                 canHoldRequest: true,
                 canUnholdRequest: false,
             });
@@ -7115,6 +7115,7 @@ describe('ReportUtils', () => {
                     currentUserAccountID,
                     undefined,
                     undefined,
+                    undefined,
                 ),
             ).toEqual({
                 canHoldRequest: false,
@@ -7154,10 +7155,12 @@ describe('ReportUtils', () => {
                 role: CONST.POLICY.ROLE.ADMIN,
             });
 
-            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, adminPolicy, currentUserAccountID, undefined, undefined)).toEqual({
-                canHoldRequest: false,
-                canUnholdRequest: false,
-            });
+            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, adminPolicy, currentUserAccountID, undefined, undefined, undefined)).toEqual(
+                {
+                    canHoldRequest: false,
+                    canUnholdRequest: false,
+                },
+            );
         });
 
         it('should return false for non-admin action owner when processing report is not awaiting first level approval', () => {
@@ -7186,8 +7189,58 @@ describe('ReportUtils', () => {
                 iouReportID: expenseReport.reportID,
             });
 
-            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(
+                canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, 'manager@test.com'),
+            ).toEqual({
                 canHoldRequest: false,
+                canUnholdRequest: false,
+            });
+        });
+
+        it('should return true for non-admin action owner when processing report is awaiting first level approval', async () => {
+            // Given a submitted expense report on a policy whose first approver is the report's manager
+            const managerLogin = 'manager@test.com';
+            const expenseReport = {
+                ...createExpenseReport(1007),
+                policyID: 'policy-7',
+                ownerAccountID: currentUserAccountID,
+                managerID: 99999,
+                stateNum: CONST.REPORT.STATE_NUM.SUBMITTED,
+                statusNum: CONST.REPORT.STATUS_NUM.SUBMITTED,
+            };
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.POLICY}${expenseReport.policyID}`, {
+                id: expenseReport.policyID,
+                type: CONST.POLICY.TYPE.CORPORATE,
+                role: CONST.POLICY.ROLE.USER,
+                approvalMode: CONST.POLICY.APPROVAL_MODE.BASIC,
+                approver: managerLogin,
+            });
+            const expenseTransaction = buildOptimisticTransaction({
+                transactionParams: {
+                    amount: 100,
+                    currency: 'USD',
+                    reportID: expenseReport.reportID,
+                },
+            });
+            // And an expense the current user created, without admin rights on the policy
+            const expenseCreatedAction = buildOptimisticIOUReportAction({
+                getCurrencyDecimals: getCurrencyDecimalsLocal,
+                type: CONST.IOU.REPORT_ACTION_TYPE.CREATE,
+                amount: 100,
+                currency: 'USD',
+                comment: '',
+                participants: [],
+                transactionID: expenseTransaction.transactionID,
+                iouReportID: expenseReport.reportID,
+            });
+            expenseCreatedAction.actorAccountID = currentUserAccountID;
+
+            // When checking hold permissions with the manager login, which no stored personal detail could supply
+            const result = canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, managerLogin);
+
+            // Then Hold is available, because the report still waits on its first approver
+            expect(result).toEqual({
+                canHoldRequest: true,
                 canUnholdRequest: false,
             });
         });
@@ -7219,7 +7272,7 @@ describe('ReportUtils', () => {
             });
             expenseCreatedAction.actorAccountID = 99996;
 
-            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(canHoldUnholdReportAction(expenseReport, expenseCreatedAction, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, undefined)).toEqual({
                 canHoldRequest: true,
                 canUnholdRequest: false,
             });
@@ -7244,7 +7297,7 @@ describe('ReportUtils', () => {
             });
 
             // When checking whether it can be held, Then Hold is available, because HoldRequest creates the missing IOU action and thread
-            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, undefined)).toEqual({
                 canHoldRequest: true,
                 canUnholdRequest: false,
             });
@@ -7269,7 +7322,7 @@ describe('ReportUtils', () => {
             });
 
             // When checking whether it can be held, Then Hold is unavailable, because only the requester can hold on an open report
-            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, expenseTransaction, undefined, currentUserAccountID, undefined, undefined, undefined)).toEqual({
                 canHoldRequest: false,
                 canUnholdRequest: false,
             });
@@ -7299,7 +7352,7 @@ describe('ReportUtils', () => {
             });
 
             // When checking whether it can be unheld, Then Unhold is unavailable, because removing the hold needs the IOU action's transaction thread
-            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, heldTransaction, adminPolicy, currentUserAccountID, undefined, undefined)).toEqual({
+            expect(canHoldUnholdReportAction(expenseReport, undefined, undefined, heldTransaction, adminPolicy, currentUserAccountID, undefined, undefined, undefined)).toEqual({
                 canHoldRequest: false,
                 canUnholdRequest: false,
             });
@@ -7500,7 +7553,7 @@ describe('ReportUtils', () => {
                     },
                 });
             });
-            expect(canDeleteMoneyRequestReport(invoiceReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, undefined)).toBe(true);
+            expect(canDeleteMoneyRequestReport(invoiceReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, undefined, undefined)).toBe(true);
         });
 
         describe('draft reports', () => {
@@ -7519,14 +7572,14 @@ describe('ReportUtils', () => {
                 const transaction = {...createRandomTransaction(901), reportID: draftReport.reportID, managedCard: false};
                 const iouAction = buildIOUActionForTransaction(draftReport.reportID, transaction.transactionID, 777);
 
-                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, adminPolicy, undefined, true)).toBe(true);
+                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, adminPolicy, undefined, true)).toBe(true);
             });
 
             it('should not allow an admin to delete a single expense on a draft report they do not own', () => {
                 const transaction = {...createRandomTransaction(901), reportID: draftReport.reportID, managedCard: false};
                 const iouAction = buildIOUActionForTransaction(draftReport.reportID, transaction.transactionID, 777);
 
-                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, adminPolicy, undefined)).toBe(false);
+                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, adminPolicy, undefined)).toBe(false);
             });
 
             it('should allow the submitter to delete their own draft report', () => {
@@ -7534,14 +7587,14 @@ describe('ReportUtils', () => {
                 const transaction = {...createRandomTransaction(902), reportID: ownDraftReport.reportID, managedCard: false};
                 const iouAction = buildIOUActionForTransaction(ownDraftReport.reportID, transaction.transactionID, currentUserAccountID);
 
-                expect(canDeleteMoneyRequestReport(ownDraftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, memberPolicy, undefined)).toBe(true);
+                expect(canDeleteMoneyRequestReport(ownDraftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, memberPolicy, undefined)).toBe(true);
             });
 
             it('should not allow a non-admin who does not own the transaction to delete a draft report', () => {
                 const transaction = {...createRandomTransaction(903), reportID: draftReport.reportID, managedCard: false};
                 const iouAction = buildIOUActionForTransaction(draftReport.reportID, transaction.transactionID, 777);
 
-                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, memberPolicy, undefined)).toBe(false);
+                expect(canDeleteMoneyRequestReport(draftReport, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, memberPolicy, undefined)).toBe(false);
             });
 
             it('should allow an admin to delete a draft report holding cash and third-party card expenses regardless of liability', () => {
@@ -7562,6 +7615,7 @@ describe('ReportUtils', () => {
                         [cashTransaction, cardTransaction],
                         [cashIOUAction, cardIOUAction],
                         currentUserAccountID,
+                        undefined,
                         undefined,
                         undefined,
                         adminPolicy,
@@ -7591,6 +7645,7 @@ describe('ReportUtils', () => {
                         currentUserAccountID,
                         undefined,
                         undefined,
+                        undefined,
                         adminPolicy,
                         undefined,
                         true,
@@ -7609,9 +7664,20 @@ describe('ReportUtils', () => {
                 };
                 const iouAction = buildIOUActionForTransaction(ownDraftReport.reportID, expensifyCardTransaction.transactionID, currentUserAccountID);
 
-                expect(canDeleteMoneyRequestReport(ownDraftReport, [expensifyCardTransaction], [iouAction], currentUserAccountID, undefined, undefined, memberPolicy, undefined, true)).toBe(
-                    false,
-                );
+                expect(
+                    canDeleteMoneyRequestReport(
+                        ownDraftReport,
+                        [expensifyCardTransaction],
+                        [iouAction],
+                        currentUserAccountID,
+                        undefined,
+                        undefined,
+                        undefined,
+                        memberPolicy,
+                        undefined,
+                        true,
+                    ),
+                ).toBe(false);
             });
         });
 
@@ -7651,7 +7717,7 @@ describe('ReportUtils', () => {
                 });
             });
 
-            expect(canDeleteMoneyRequestReport(expenseReport, [], [], currentUserAccountID, undefined, undefined, undefined, undefined)).toBe(true);
+            expect(canDeleteMoneyRequestReport(expenseReport, [], [], currentUserAccountID, undefined, undefined, undefined, undefined, undefined)).toBe(true);
         });
 
         it('should allow card expense deletion as the policy admin', async () => {
@@ -7698,7 +7764,7 @@ describe('ReportUtils', () => {
                 });
             });
 
-            expect(canDeleteMoneyRequestReport(expenseReport, [cardTransaction], [], currentUserAccountID, undefined, undefined, adminPolicy, undefined, false)).toBe(true);
+            expect(canDeleteMoneyRequestReport(expenseReport, [cardTransaction], [], currentUserAccountID, undefined, undefined, undefined, adminPolicy, undefined, false)).toBe(true);
         });
 
         describe('reportOwnerLogin threading', () => {
@@ -7751,11 +7817,13 @@ describe('ReportUtils', () => {
                 const iouAction = buildIOUActionForTransaction(report.reportID, transaction.transactionID, currentUserAccountID);
 
                 // When the owner login reaches canDeleteMoneyRequestReport, the report is still awaiting its first level
-                expect(canDeleteMoneyRequestReport(report, [transaction], [iouAction], currentUserAccountID, undefined, THREADING_OWNER_EMAIL, undefined, undefined)).toBe(true);
+                expect(canDeleteMoneyRequestReport(report, [transaction], [iouAction], currentUserAccountID, undefined, THREADING_OWNER_EMAIL, undefined, undefined, undefined)).toBe(true);
 
                 // Then passing a member who submits elsewhere flips the answer, which proves the login is carried
                 // through rather than resolved from the personal details store inside the call
-                expect(canDeleteMoneyRequestReport(report, [transaction], [iouAction], currentUserAccountID, undefined, THREADING_OTHER_MEMBER_EMAIL, undefined, undefined)).toBe(false);
+                expect(canDeleteMoneyRequestReport(report, [transaction], [iouAction], currentUserAccountID, undefined, THREADING_OTHER_MEMBER_EMAIL, undefined, undefined, undefined)).toBe(
+                    false,
+                );
             });
 
             it('should decide from the passed report actions whether the report was forwarded since its last submit', async () => {
@@ -7768,9 +7836,9 @@ describe('ReportUtils', () => {
                 const forwardedAction: ReportAction = {...createRandomReportAction(913), actionName: CONST.REPORT.ACTIONS.TYPE.FORWARDED, created: '2026-04-21 17:10:00'};
 
                 // When the passed actions hold only that submit, the submitter can still delete because the report awaits its first level
-                expect(canDeleteMoneyRequestReport(report, [transaction], [iouAction, submittedAction], currentUserAccountID, undefined, THREADING_OWNER_EMAIL, undefined, undefined)).toBe(
-                    true,
-                );
+                expect(
+                    canDeleteMoneyRequestReport(report, [transaction], [iouAction, submittedAction], currentUserAccountID, undefined, THREADING_OWNER_EMAIL, undefined, undefined, undefined),
+                ).toBe(true);
 
                 // Then a forward after that submit, read from the same passed actions, blocks the delete
                 expect(
@@ -7781,6 +7849,7 @@ describe('ReportUtils', () => {
                         currentUserAccountID,
                         undefined,
                         THREADING_OWNER_EMAIL,
+                        undefined,
                         undefined,
                         undefined,
                     ),
@@ -7837,7 +7906,7 @@ describe('ReportUtils', () => {
                 const transaction = buildLegacyUnreportedTransaction(9302, false);
 
                 // When the delete option is checked with no IOU action for it
-                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, {});
+                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, undefined, {});
 
                 // Then the current user can delete it, instead of the missing action hiding the option
                 expect(canDelete).toBe(true);
@@ -7849,7 +7918,7 @@ describe('ReportUtils', () => {
                 const cardList: CardList = {[LEGACY_CARD_ID]: createRandomCompanyCard(LEGACY_CARD_ID, {accountID: currentUserAccountID})};
 
                 // When the delete option is checked with no IOU action for it
-                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, cardList);
+                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, undefined, cardList);
 
                 // Then the card holder can delete it
                 expect(canDelete).toBe(true);
@@ -7860,7 +7929,7 @@ describe('ReportUtils', () => {
                 const transaction = buildLegacyUnreportedTransaction(9304, true);
 
                 // When the delete option is checked with no IOU action for it
-                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, {});
+                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [], currentUserAccountID, undefined, undefined, undefined, undefined, {});
 
                 // Then the current user can't delete it, because it belongs to the card holder
                 expect(canDelete).toBe(false);
@@ -7872,7 +7941,7 @@ describe('ReportUtils', () => {
                 const iouAction = buildIOUActionForTransaction(CONST.REPORT.UNREPORTED_REPORT_ID, transaction.transactionID, currentUserAccountID + 1);
 
                 // When the delete option is checked with that action
-                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, {});
+                const canDelete = canDeleteMoneyRequestReport(undefined, [transaction], [iouAction], currentUserAccountID, undefined, undefined, undefined, undefined, {});
 
                 // Then the action decides, so the fallback for expenses without an action doesn't let the current user delete it
                 expect(canDelete).toBe(false);
@@ -25996,10 +26065,10 @@ describe('ReportUtils', () => {
             };
 
             // When the owner login routes to the approver holding the report, it is still awaiting its first level, so hold is allowed
-            expect(canModifyHoldStatus(report, iouAction, currentUserAccountID, false, undefined, THREADING_SUBMITTER_TO_MANAGER)).toBe(true);
+            expect(canModifyHoldStatus(report, iouAction, currentUserAccountID, false, undefined, THREADING_SUBMITTER_TO_MANAGER, undefined)).toBe(true);
 
             // Then a login that submits elsewhere flips the answer, which proves canModifyHoldStatus reads the parameter
-            expect(canModifyHoldStatus(report, iouAction, currentUserAccountID, false, undefined, THREADING_SUBMITTER_ELSEWHERE)).toBe(false);
+            expect(canModifyHoldStatus(report, iouAction, currentUserAccountID, false, undefined, THREADING_SUBMITTER_ELSEWHERE, undefined)).toBe(false);
         });
 
         it('should carry the reportOwnerLogin through isReportFieldDisabledForUser', () => {
@@ -31844,25 +31913,25 @@ describe('ReportUtils', () => {
 
         it('returns false for non-money-request reports', () => {
             const chatReport = makeReport({type: CONST.REPORT.TYPE.CHAT});
-            expect(canModifyHoldStatus(chatReport, makeReportAction(), currentUserAccountID, true, undefined, undefined)).toBe(false);
+            expect(canModifyHoldStatus(chatReport, makeReportAction(), currentUserAccountID, true, undefined, undefined, undefined)).toBe(false);
         });
 
         it('returns true for IOU report when user is action owner', () => {
             const iouReport = makeReport({type: CONST.REPORT.TYPE.IOU});
             const reportAction = makeReportAction({actorAccountID: currentUserAccountID});
-            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(true);
+            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(true);
         });
 
         it('returns true for IOU report when user is manager', () => {
             const iouReport = makeReport({type: CONST.REPORT.TYPE.IOU, managerID: currentUserAccountID});
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(true);
+            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(true);
         });
 
         it('returns false for IOU report when user is neither owner nor manager', () => {
             const iouReport = makeReport({type: CONST.REPORT.TYPE.IOU, managerID: 888});
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(false);
+            expect(canModifyHoldStatus(iouReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(false);
         });
 
         it('returns true for open expense report when user is action owner', () => {
@@ -31872,7 +31941,7 @@ describe('ReportUtils', () => {
                 statusNum: CONST.REPORT.STATUS_NUM.OPEN,
             });
             const reportAction = makeReportAction({actorAccountID: currentUserAccountID});
-            expect(canModifyHoldStatus(openExpenseReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(true);
+            expect(canModifyHoldStatus(openExpenseReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(true);
         });
 
         it('returns false for open expense report when user is not action owner', () => {
@@ -31882,7 +31951,7 @@ describe('ReportUtils', () => {
                 statusNum: CONST.REPORT.STATUS_NUM.OPEN,
             });
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(openExpenseReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(false);
+            expect(canModifyHoldStatus(openExpenseReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(false);
         });
 
         it('returns true for admin on processing expense report', () => {
@@ -31892,7 +31961,7 @@ describe('ReportUtils', () => {
                 statusNum: CONST.REPORT.STATUS_NUM.SUBMITTED,
             });
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(processingReport, reportAction, currentUserAccountID, true, undefined, undefined)).toBe(true);
+            expect(canModifyHoldStatus(processingReport, reportAction, currentUserAccountID, true, undefined, undefined, undefined)).toBe(true);
         });
 
         it('returns true for manager on processing expense report', () => {
@@ -31903,7 +31972,7 @@ describe('ReportUtils', () => {
                 managerID: currentUserAccountID,
             });
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(processingReport, reportAction, currentUserAccountID, false, undefined, undefined)).toBe(true);
+            expect(canModifyHoldStatus(processingReport, reportAction, currentUserAccountID, false, undefined, undefined, undefined)).toBe(true);
         });
 
         it('returns false for admin on non-processing expense report', () => {
@@ -31913,7 +31982,7 @@ describe('ReportUtils', () => {
                 statusNum: CONST.REPORT.STATUS_NUM.APPROVED,
             });
             const reportAction = makeReportAction({actorAccountID: 999});
-            expect(canModifyHoldStatus(approvedReport, reportAction, currentUserAccountID, true, undefined, undefined)).toBe(false);
+            expect(canModifyHoldStatus(approvedReport, reportAction, currentUserAccountID, true, undefined, undefined, undefined)).toBe(false);
         });
     });
 

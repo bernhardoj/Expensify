@@ -3987,6 +3987,7 @@ function canDeleteMoneyRequestReport(
     currentUserAccountID: number,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
     policy: OnyxEntry<Policy>,
     cardList: OnyxEntry<CardList>,
     isReportLevelDelete = false,
@@ -4041,7 +4042,7 @@ function canDeleteMoneyRequestReport(
     }
 
     if (isExpenseReport(report)) {
-        if (!isOpenReport(report) && !(isProcessingReport(report) && isAwaitingFirstLevelApproval(report, rules, reportOwnerLogin, undefined, reportActions))) {
+        if (!isOpenReport(report) && !(isProcessingReport(report) && isAwaitingFirstLevelApproval(report, rules, reportOwnerLogin, reportManagerLogin, reportActions))) {
             return false;
         }
 
@@ -4110,6 +4111,7 @@ function canDeleteReportAction(
             currentUserAccountID,
             rules,
             getLoginByAccountID(report.ownerAccountID, personalDetails),
+            getLoginByAccountID(report.managerID, personalDetails),
             policy,
             cardList,
             true,
@@ -6800,6 +6802,7 @@ function canModifyHoldStatus(
     isAdmin: boolean,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
 ): boolean {
     if (!isMoneyRequestReport(report) || isTrackExpenseReport(report)) {
         return false;
@@ -6817,7 +6820,7 @@ function canModifyHoldStatus(
     }
 
     if (isActionOwner && !isAdmin) {
-        return isAwaitingFirstLevelApproval(report, rules, reportOwnerLogin);
+        return isAwaitingFirstLevelApproval(report, rules, reportOwnerLogin, reportManagerLogin);
     }
 
     return (isAdmin || isManager) && isProcessingReport(report);
@@ -6832,6 +6835,7 @@ function canHoldUnholdReportAction(
     currentUserAccountID: number | undefined,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
 ): {canHoldRequest: boolean; canUnholdRequest: boolean} {
     // Some reported expenses have no IOU action. HoldRequest creates the missing action and transaction thread, so they can still be held.
     // Unlike canEditFieldOfMoneyRequest, this check never looks up the expense's report and judges everything on the report passed in.
@@ -6854,7 +6858,7 @@ function canHoldUnholdReportAction(
     const isOnHold = isOnHoldTransactionUtils(transaction);
     const isClosed = isClosedReport(report);
 
-    const canModifyStatus = canModifyHoldStatus(report, reportAction, currentUserAccountID, isAdmin, rules, reportOwnerLogin);
+    const canModifyStatus = canModifyHoldStatus(report, reportAction, currentUserAccountID, isAdmin, rules, reportOwnerLogin, reportManagerLogin);
     const canModifyUnholdStatus = !isTrackExpenseMoneyReport && (isAdmin || (isActionOwner && isHoldActionCreator) || isApprover);
 
     const canHoldOrUnholdRequest = !isRequestSettled && !isApproved && !isClosed && !isDeletedParentAction(reportAction);

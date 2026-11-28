@@ -649,6 +649,7 @@ function isHoldAction(
     currentUserAccountID: number | undefined,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
     /** TODO: Should be a required field in the future. Refactor issue: https://github.com/Expensify/App/issues/66407 */
     isOffline?: boolean,
 ): boolean {
@@ -661,7 +662,7 @@ function isHoldAction(
     }
 
     const action = !!reportActions && getIOUActionForTransactionID(reportActions, transaction.transactionID);
-    return !!action && isHoldActionForTransaction(report, transaction, action, policy, currentUserAccountID, rules, reportOwnerLogin);
+    return !!action && isHoldActionForTransaction(report, transaction, action, policy, currentUserAccountID, rules, reportOwnerLogin, reportManagerLogin);
 }
 
 function isHoldActionForTransaction(
@@ -672,12 +673,13 @@ function isHoldActionForTransaction(
     currentUserAccountID: number | undefined,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
 ): boolean {
     const isExpenseReport = isExpenseReportUtils(report);
     const isIOUReport = isIOUReportUtils(report);
     const iouOrExpenseReport = isExpenseReport || isIOUReport;
     const holdReportAction = getReportAction(reportAction?.childReportID, `${reportTransaction?.comment?.hold ?? ''}`);
-    const {canHoldRequest} = canHoldUnholdReportAction(report, reportAction, holdReportAction, reportTransaction, policy, currentUserAccountID, rules, reportOwnerLogin);
+    const {canHoldRequest} = canHoldUnholdReportAction(report, reportAction, holdReportAction, reportTransaction, policy, currentUserAccountID, rules, reportOwnerLogin, reportManagerLogin);
     const isActionOwner = isActionCreator(reportAction);
 
     if (isOpenExpenseReport(report)) {
@@ -750,12 +752,24 @@ function isDeleteAction(
     currentUserAccountID: number,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
     policy: OnyxEntry<Policy>,
     cardList: OnyxEntry<CardList>,
     reportActions?: ReportAction[],
     isReportLevelDelete = false,
 ): boolean {
-    return canDeleteMoneyRequestReport(report, reportTransactions, reportActions ?? [], currentUserAccountID, rules, reportOwnerLogin, policy, cardList, isReportLevelDelete);
+    return canDeleteMoneyRequestReport(
+        report,
+        reportTransactions,
+        reportActions ?? [],
+        currentUserAccountID,
+        rules,
+        reportOwnerLogin,
+        reportManagerLogin,
+        policy,
+        cardList,
+        isReportLevelDelete,
+    );
 }
 
 function shouldShowEditSplitInDeleteAction(
@@ -767,6 +781,7 @@ function shouldShowEditSplitInDeleteAction(
     policy: OnyxEntry<Policy>,
     rules: OnyxCollection<Rule>,
     reportOwnerLogin: string | undefined,
+    reportManagerLogin: string | undefined,
     cardList: OnyxEntry<CardList>,
 ): boolean {
     if (reportTransactions.length !== 1) {
@@ -781,7 +796,7 @@ function shouldShowEditSplitInDeleteAction(
     const isSelfDMSplit = isSelfDMReportUtils(report);
     return (
         shouldRedirectDeleteToSplitExpenseEdit(reportTransaction, originalTransaction, isSelfDMSplit) &&
-        isDeleteAction(report, reportTransactions, currentUserAccountID, rules, reportOwnerLogin, policy, cardList, reportActions)
+        isDeleteAction(report, reportTransactions, currentUserAccountID, rules, reportOwnerLogin, reportManagerLogin, policy, cardList, reportActions)
     );
 }
 
@@ -1026,6 +1041,7 @@ function getSecondaryReportActions({
     currentUserLogin,
     currentUserAccountID,
     submitterLogin,
+    managerLogin,
     report,
     chatReport,
     reportTransactions,
@@ -1049,6 +1065,7 @@ function getSecondaryReportActions({
     currentUserLogin: string;
     currentUserAccountID: number;
     submitterLogin: string | undefined;
+    managerLogin: string | undefined;
     report: Report;
     chatReport: OnyxEntry<Report>;
     reportTransactions: Transaction[];
@@ -1162,7 +1179,7 @@ function getSecondaryReportActions({
         options.push(CONST.REPORT.SECONDARY_ACTIONS.REOPEN);
     }
 
-    if (isHoldAction(report, chatReport, reportTransactions, reportActions, policy, currentUserAccountID, rules, submitterLogin, isOffline)) {
+    if (isHoldAction(report, chatReport, reportTransactions, reportActions, policy, currentUserAccountID, rules, submitterLogin, managerLogin, isOffline)) {
         options.push(CONST.REPORT.SECONDARY_ACTIONS.HOLD);
     }
 
@@ -1176,7 +1193,7 @@ function getSecondaryReportActions({
 
     if (
         isSplitAction(report, reportTransactions, originalTransaction, currentUserLogin, currentUserAccountID, rules, submitterLogin, policy, parentReport) &&
-        !shouldShowEditSplitInDeleteAction(report, reportTransactions, reportActions, originalTransaction, currentUserAccountID, policy, rules, submitterLogin, cardList)
+        !shouldShowEditSplitInDeleteAction(report, reportTransactions, reportActions, originalTransaction, currentUserAccountID, policy, rules, submitterLogin, managerLogin, cardList)
     ) {
         options.push(CONST.REPORT.SECONDARY_ACTIONS.SPLIT);
     }
@@ -1253,7 +1270,7 @@ function getSecondaryReportActions({
 
     options.push(CONST.REPORT.SECONDARY_ACTIONS.VIEW_DETAILS);
 
-    if (isDeleteAction(report, reportTransactions, currentUserAccountID, rules, submitterLogin, policy, cardList, reportActions ?? [], true)) {
+    if (isDeleteAction(report, reportTransactions, currentUserAccountID, rules, submitterLogin, managerLogin, policy, cardList, reportActions ?? [], true)) {
         options.push(CONST.REPORT.SECONDARY_ACTIONS.DELETE);
     }
 
@@ -1289,6 +1306,7 @@ function getSecondaryTransactionThreadActions({
     currentUserAccountID,
     parentReport,
     parentReportOwnerLogin,
+    parentReportManagerLogin,
     parentReportActions,
     reportTransaction,
     reportAction,
@@ -1313,6 +1331,7 @@ function getSecondaryTransactionThreadActions({
      * See https://github.com/Expensify/App/issues/66413.
      */
     parentReportOwnerLogin?: string;
+    parentReportManagerLogin: string | undefined;
     /** Actions of the parent report, so the delete check can see whether it was forwarded since its last submit */
     parentReportActions: OnyxEntry<ReportActions>;
     reportTransaction: Transaction;
@@ -1334,7 +1353,7 @@ function getSecondaryTransactionThreadActions({
 }): Array<ValueOf<typeof CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS>> {
     const options: Array<ValueOf<typeof CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS>> = [];
 
-    if (!!reportAction && isHoldActionForTransaction(parentReport, reportTransaction, reportAction, policy, currentUserAccountID, rules, parentReportOwnerLogin)) {
+    if (!!reportAction && isHoldActionForTransaction(parentReport, reportTransaction, reportAction, policy, currentUserAccountID, rules, parentReportOwnerLogin, parentReportManagerLogin)) {
         options.push(CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS.HOLD);
     }
 
@@ -1361,6 +1380,7 @@ function getSecondaryTransactionThreadActions({
             policy,
             rules,
             parentReportOwnerLogin,
+            parentReportManagerLogin,
             cardList,
         )
     ) {
@@ -1414,7 +1434,7 @@ function getSecondaryTransactionThreadActions({
 
     options.push(CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS.VIEW_DETAILS);
 
-    if (isDeleteAction(parentReport, [reportTransaction], currentUserAccountID, rules, parentReportOwnerLogin, policy, cardList, parentReportActionsList)) {
+    if (isDeleteAction(parentReport, [reportTransaction], currentUserAccountID, rules, parentReportOwnerLogin, parentReportManagerLogin, policy, cardList, parentReportActionsList)) {
         options.push(CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS.DELETE);
     }
 

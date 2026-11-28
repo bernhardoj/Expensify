@@ -493,7 +493,8 @@ function getAllExpensesToHoldIfApplicable(
         const transactionID = getOriginalMessage(action)?.IOUTransactionID;
         const transaction = reportTransactions.find((reportTransaction) => reportTransaction.transactionID === transactionID);
         const holdReportAction = getReportAction(action?.childReportID, `${transaction?.comment?.hold ?? ''}`);
-        return canHoldUnholdReportAction(report, action, holdReportAction, transaction, policy, currentUserAccountID, rules, reportOwnerLogin).canUnholdRequest;
+        // Only canUnholdRequest is read here, and whether an expense can be unheld never depends on the report manager's login, so none is passed.
+        return canHoldUnholdReportAction(report, action, holdReportAction, transaction, policy, currentUserAccountID, rules, reportOwnerLogin, undefined).canUnholdRequest;
     });
 }
 
